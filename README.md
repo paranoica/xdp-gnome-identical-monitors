@@ -18,6 +18,10 @@ monitors share it, e.g. `HDMI-1:GSM:LG FULL HD:0x01010101`. Monitors with a
 unique EDID keep the old string, so their saved tokens keep working. Tokens
 saved for one of the twins before the patch make the portal ask once more.
 
+Upstream: [GNOME/xdg-desktop-portal-gnome!276](https://gitlab.gnome.org/GNOME/xdg-desktop-portal-gnome/-/merge_requests/276),
+fixes [#131](https://gitlab.gnome.org/GNOME/xdg-desktop-portal-gnome/-/issues/131).
+Once it lands in a release, this package is not needed anymore.
+
 ## Install
 
 ```sh
