@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -u
+
+# patched package, repo package
+pairs=(
+  "mutter-lma mutter"
+  "xdg-desktop-portal-gnome-identical-monitors xdg-desktop-portal-gnome"
+)
+
+# an arch rebuild with the same upstream version needs no new patched build
+upstream_version() {
+  printf '%s\n' "${1%-*}"
+}
+
+for pair in "${pairs[@]}"; do
+  read -r patched repo <<<"$pair"
+
+  installed=$(pacman -Q "$patched" 2>/dev/null) || continue
+  installed=${installed#* }
+
+  available=$(LC_ALL=C pacman -Si "$repo" 2>/dev/null |
+    awk -F' *: ' '$1 == "Version" { print $2; exit }')
+  [ -n "$available" ] || continue
+
+  if [ "$(vercmp "$(upstream_version "$available")" "$(upstream_version "$installed")")" -gt 0 ]; then
+    printf 'warning: %s %s is in the repos, but the installed patched build is %s %s.\n' \
+      "$repo" "$available" "$patched" "$installed"
+    printf '         Rebuild %s on %s %s.\n' "$patched" "$repo" "$(upstream_version "$available")"
+  fi
+done
+
+exit 0

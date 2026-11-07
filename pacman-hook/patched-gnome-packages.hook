@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Checking patched GNOME packages against the repos...
+When = PostTransaction
+Exec = /usr/local/bin/check-patched-gnome-packages
