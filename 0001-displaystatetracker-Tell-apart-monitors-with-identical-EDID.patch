@@ -1,0 +1,75 @@
+From ac4fb870836eafeb5ff587790865107aba53f37a Mon Sep 17 00:00:00 2001
+From: paranoica <mitjumper@gmail.com>
+Date: Sat, 7 Nov 2026 04:12:06 +0300
+Subject: [PATCH] displaystatetracker: Tell apart monitors with identical EDID
+
+Monitors of the same model can report the same vendor, product and
+serial; some LG panels all report serial 0x01010101. Screencast restore
+data identifies a monitor by that triple, so restoring a session picked
+whichever of the twins came first, no matter which one had been
+selected.
+
+Prefix the connector name to the match string of every monitor whose
+vendor:product:serial is shared with another connected monitor.
+Monitors with a unique identity keep the existing match string, so
+restore data stored for them stays valid.
+---
+ src/displaystatetracker.c | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/src/displaystatetracker.c b/src/displaystatetracker.c
+index 37bf472..3ae040f 100644
+--- a/src/displaystatetracker.c
++++ b/src/displaystatetracker.c
+@@ -273,6 +273,39 @@ read_current_width_and_height (GVariantIter *modes, Monitor *monitor)
+   g_warning ("Monitor '%s' has no configuration which is-current!", monitor->display_name);
+ }
+ 
++static void
++disambiguate_match_strings (GList *monitors)
++{
++  g_autoptr(GHashTable) counts = NULL;
++  GList *l;
++
++  counts = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
++
++  for (l = monitors; l; l = l->next)
++    {
++      Monitor *monitor = l->data;
++      unsigned int count;
++
++      count = GPOINTER_TO_UINT (g_hash_table_lookup (counts, monitor->match_string));
++      g_hash_table_insert (counts,
++                           g_strdup (monitor->match_string),
++                           GUINT_TO_POINTER (count + 1));
++    }
++
++  for (l = monitors; l; l = l->next)
++    {
++      Monitor *monitor = l->data;
++      char *match_string;
++
++      if (GPOINTER_TO_UINT (g_hash_table_lookup (counts, monitor->match_string)) < 2)
++        continue;
++
++      match_string = g_strdup_printf ("%s:%s", monitor->connector, monitor->match_string);
++      g_free (monitor->match_string);
++      monitor->match_string = match_string;
++    }
++}
++
+ static void
+ generate_monitors (DisplayStateTracker *tracker,
+                    GVariant *monitors)
+@@ -337,6 +370,8 @@ generate_monitors (DisplayStateTracker *tracker,
+     }
+ 
+     sorted_monitors = g_list_concat (sorted_monitors_builtin, sorted_monitors);
++    disambiguate_match_strings (sorted_monitors);
++
+     for (item = sorted_monitors; item != NULL; item = item->next)
+       {
+         monitor = item->data;
+-- 
+2.56.0
+
