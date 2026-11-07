@@ -167,6 +167,38 @@ test_identical_pair_plus_other (void)
 }
 
 static void
+test_three_identical (void)
+{
+  set_layout ("[" LG_PAIR_LEFT ", " LG_PAIR_RIGHT ", "
+              "{\"connector\": \"DP-2\", \"vendor\": \"GSM\", \"product\": \"LG FULL HD\","
+              " \"serial\": \"0x01010101\", \"x\": 3840, \"y\": 0}"
+              "]");
+
+  g_assert_cmpstr (match_string_of ("DVI-D-1"), ==, "DVI-D-1:GSM:LG FULL HD:0x01010101");
+  g_assert_cmpstr (match_string_of ("HDMI-1"), ==, "HDMI-1:GSM:LG FULL HD:0x01010101");
+  g_assert_cmpstr (match_string_of ("DP-2"), ==, "DP-2:GSM:LG FULL HD:0x01010101");
+  assert_match_strings_unique ();
+}
+
+static void
+test_two_pairs_and_unique (void)
+{
+  set_layout ("[" LG_PAIR_LEFT ", " LG_PAIR_RIGHT ", " DELL ", "
+              "{\"connector\": \"DP-2\", \"vendor\": \"DEL\", \"product\": \"DELL U2414H\","
+              " \"serial\": \"0x12345678\", \"x\": 5760, \"y\": 0}, "
+              "{\"connector\": \"DP-3\", \"vendor\": \"SAM\", \"product\": \"S24F350\","
+              " \"serial\": \"0x4e584d30\", \"x\": 7680, \"y\": 0}"
+              "]");
+
+  g_assert_cmpstr (match_string_of ("DVI-D-1"), ==, "DVI-D-1:GSM:LG FULL HD:0x01010101");
+  g_assert_cmpstr (match_string_of ("HDMI-1"), ==, "HDMI-1:GSM:LG FULL HD:0x01010101");
+  g_assert_cmpstr (match_string_of ("DP-1"), ==, "DP-1:DEL:DELL U2414H:0x12345678");
+  g_assert_cmpstr (match_string_of ("DP-2"), ==, "DP-2:DEL:DELL U2414H:0x12345678");
+  g_assert_cmpstr (match_string_of ("DP-3"), ==, "SAM:S24F350:0x4e584d30");
+  assert_match_strings_unique ();
+}
+
+static void
 test_builtin_and_external_identical (void)
 {
   set_layout ("["
@@ -243,6 +275,8 @@ main (int    argc,
                    test_distinct_monitors_unchanged);
   g_test_add_func ("/match-string/identical-pair-plus-other",
                    test_identical_pair_plus_other);
+  g_test_add_func ("/match-string/three-identical", test_three_identical);
+  g_test_add_func ("/match-string/two-pairs-and-unique", test_two_pairs_and_unique);
   g_test_add_func ("/match-string/builtin-and-external-identical",
                    test_builtin_and_external_identical);
   g_test_add_func ("/match-string/unknown-edid-uses-connector",
