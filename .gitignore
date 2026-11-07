@@ -1,0 +1,6 @@
+/src/
+/pkg/
+/xdg-desktop-portal-gnome/
+/libgxdp/
+*.pkg.tar.zst
+__pycache__/
